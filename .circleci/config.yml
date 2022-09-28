@@ -4,19 +4,11 @@ orbs:
   slack: circleci/slack@4.10.1
 
 commands:
-  notify-on-failure:
-    steps:
-      - slack/notify:
-          event: fail
-          channel: udapeople
-          template: failure
-
   notify-on-success:
      steps:
        - slack/notify:
           event: pass
-          channel: udapeople
-          template: success
+          template: success_tagged_deploy_1
 jobs:
   build-frontend:
     docker:
@@ -94,6 +86,7 @@ jobs:
             npm install
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
+  
   scan-backend:
     docker:
       - image: cimg/node:13.8.0
@@ -106,8 +99,10 @@ jobs:
           command: |
             cd backend
             npm install
+            npm audit fix --audit-level=critical --force
+            npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
-      - notify-on-failure
+
 workflows:
   default:
     jobs:
@@ -121,5 +116,5 @@ workflows:
           requires: [build-frontend]
       - scan-backend:
           requires: [build-backend]
-          context:
-            - slack-secrets
+      - notify-on-success:
+          context: slack-secrets
