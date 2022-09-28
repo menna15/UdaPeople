@@ -35,8 +35,6 @@ jobs:
           paths: [frontend/node_modules]
           key: frontend-build
 
-      - notify-on-failure
-
   build-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -123,3 +121,5 @@ workflows:
           requires: [build-frontend]
       - scan-backend:
           requires: [build-backend]
+          context:
+            - slack-secrets
