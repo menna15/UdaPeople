@@ -9,11 +9,6 @@
     src: artifact.tar.gz
     dest: ~/app
 
-- name: "Installing Node Dependencies"
-  shell: |
-    cd ~/app
-    npm install
-
 - name: "Executing Node app with PM2"
   shell: |
     cd ~/app/dist
