@@ -80,7 +80,9 @@ jobs:
             npm install
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
-  
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
   scan-backend:
     docker:
       - image: cimg/node:13.8.0
@@ -96,7 +98,6 @@ jobs:
             npm audit --audit-level=critical
 
       - slack/notify:
-          when: on_fail
           event: fail
           template: basic_fail_1
   # notify:
@@ -116,6 +117,7 @@ workflows:
       - test-backend:
           requires: [build-backend]
       - scan-frontend:
+          context: slack-secrets
           requires: [build-frontend]
       - scan-backend:
           context: slack-secrets
