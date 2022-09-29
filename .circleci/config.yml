@@ -170,7 +170,7 @@ jobs:
       - image: python:3.7-alpine3.11
     steps:
       - checkout
-      - install_awscli
+      - install-awscli
       - run:
           name: Install dependencies
           command: |
