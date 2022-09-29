@@ -3,23 +3,6 @@ version: 2.1
 orbs: 
   slack: circleci/slack@4.10.1
 
-commands:
-  on-success:
-   steps:
-     - run:
-        name: job success
-        command: |
-          event: pass
-          template: success_tagged_deploy_1
-
-  on-failure:
-   steps:
-     - run:
-        when: on_fail
-        name: job failed
-        command: |
-          event: fail
-          template: basic_fail_1
 jobs:
   build-frontend:
     docker:
@@ -111,7 +94,11 @@ jobs:
             cd backend
             npm install
             npm audit --audit-level=critical
-      - on-failure
+
+      - slack/notify:
+          when: on_fail
+          event: fail
+          template: basic_fail_1
   # notify:
   #   docker:
   #     - image: 'cimg/base:stable'
@@ -131,6 +118,7 @@ workflows:
       - scan-frontend:
           requires: [build-frontend]
       - scan-backend:
+          context: slack-secrets
           requires: [build-backend]
       # - notify:
       #     context: slack-secrets
