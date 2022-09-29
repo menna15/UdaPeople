@@ -16,12 +16,17 @@ commands:
 
 
   revert-migrations:
+    parameters:
+      Workflow_ID:
+        type: string
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
     steps:
       - run:
           name: Revert migrations
           when: on_fail
           command: |
-            if ($(curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}));
+            SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
+            if (( $SUCCESS == 1 ));
             then
               cd ~/project/backend
               npm install
@@ -133,9 +138,13 @@ jobs:
 
   deploy-infrastructure:
     docker:
-      - image: amazon/aws-cli
+      - image: python:3.7-alpine3.16
     steps:
       - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar gzip ansible aws-cli
       - run:
           name: Ensure back-end infrastructure exists
           command: |
