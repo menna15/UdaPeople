@@ -221,10 +221,6 @@ jobs:
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscli.zip"
             unzip awscli.zip
             sudo ./aws/install
-      - restore_cache:
-         keys: [backend-build]
-      - attach_workspace:
-          at: ~/
       - run:
           name: Run migrations
           command: |
