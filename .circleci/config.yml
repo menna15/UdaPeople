@@ -211,6 +211,8 @@ jobs:
             sudo ./aws/install
       - restore_cache:
          keys: [backend-build]
+      - attach_workspace:
+          at: ~/
       - run:
           name: Run migrations
           command: |
@@ -223,7 +225,7 @@ jobs:
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
                 # If you are using kvdb.io, generate the bucket ID "5urYsFn6p8E8robty82HMz" in your local terminal first
-                curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+                curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
 
       - destroy-environment
@@ -261,6 +263,9 @@ jobs:
 
         - destroy-environment
         - revert-migrations                    
+
+
+
 workflows:
   default:
     jobs:
