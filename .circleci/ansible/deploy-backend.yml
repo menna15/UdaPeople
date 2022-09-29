@@ -10,7 +10,7 @@
     - ansible_stdout_callback: yaml
 
   environment:
-    - NODE_ENV: "production"
+    - NODE_ENV: production
     - VERSION: "1"
     - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_CONNECTION')}}"
     - TYPEORM_ENTITIES: "./modules/domain/**/*.entity{.ts,.js}"
@@ -19,8 +19,8 @@
     - TYPEORM_USERNAME: "{{ lookup('env', 'TYPEORM_USERNAME')}}"
     - TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD')}}"
     - TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE')}}"
-    - TYPEORM_MIGRATIONS: "./migrations/*.ts"
-    - TYPEORM_MIGRATIONS_DIR: "./migrations"
+    - TYPEORM_MIGRATIONS: ./migrations/*.ts
+    - TYPEORM_MIGRATIONS_DIR: ./migrations
 
   roles:
     - deploy
