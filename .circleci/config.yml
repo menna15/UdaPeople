@@ -15,6 +15,7 @@ commands:
   on-failure:
    steps:
      - run:
+        when: on_fail
         name: job failed
         command: |
           event: fail
@@ -110,10 +111,7 @@ jobs:
             cd backend
             npm install
             npm audit --audit-level=critical
-      - run: 
-          command: on-failure
-          name: Slack - notification
-          when: on_fail
+      - on-failure
   # notify:
   #   docker:
   #     - image: 'cimg/base:stable'
