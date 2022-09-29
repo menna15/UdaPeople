@@ -9,11 +9,16 @@
     src: artifact.tar.gz
     dest: ~/app
 
+- name: "Installing Node Dependencies"
+  shell: |
+    cd ~/app
+    npm i
+    
 - name: "Executing Node app with PM2"
   shell: |
     cd ~/app/dist
     pm2 stop default
-    pm2 start npm -- start
+    pm2 start main.js
   register: execute_node
 
 - name: print message
