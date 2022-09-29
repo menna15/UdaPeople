@@ -287,7 +287,7 @@ jobs:
             npm run build
             cd ..
             tar -C backend -czvf artifact.tar.gz .
-            cp artifact.tar.gz ~/project/.circleci/ansible/role/deploy/files
+            cp artifact.tar.gz ~/project/.circleci/ansible/roles/deploy/files
             cd .circleci/ansible
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
