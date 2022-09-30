@@ -4,10 +4,16 @@
   apt:
     upgrade: "yes"
 
+- name: "install node js version 13"
+  become: true
+  shell: |
+    sudo apt-get install curl
+    curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -   
+
 - name: "install dependencies."
   become: true
   apt:
-    name: ["nodejs", "npm"]
+    name: ["nodejs"]
     state: latest
     update_cache: yes
 
