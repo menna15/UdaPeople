@@ -264,9 +264,9 @@ jobs:
               cat /etc/*release
               curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
               yum -y install nodejs
-              npm install -g npm
-              npm install oauth2
-              npm install webpack
+              # npm install -g npm
+              # npm install oauth2
+              # npm install webpack
       - run:
           name: Install awscli
           command: |
@@ -305,9 +305,9 @@ jobs:
           command: |
               curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
               yum -y install nodejs
-              npm install -g npm
-              npm install oauth2
-              npm install webpack
+              # npm install -g npm
+              # npm install oauth2
+              # npm install webpack
       - run:
           name: Install awscli
           command: |
