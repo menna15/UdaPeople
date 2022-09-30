@@ -42,6 +42,7 @@ commands:
              npm run migrations:revert
               exit 0
             fi
+            
 jobs:
   build-frontend:
     docker:
