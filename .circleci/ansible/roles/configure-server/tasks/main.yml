@@ -1,45 +1,36 @@
 ---
-- name: "update apt"
-  become: true
+- name: "install python."
+  become: yes
   apt:
-      update_cache: yes
+    name: python3
+    state: latest
+    update_cache: yes
 
-- name: "upgrade apt packages"
-  become: true
+- name: "update apt packages."
+  become: yes
   apt:
-      upgrade: "yes"
+    update_cache: yes
+
+- name: "upgrade packages."
+  become: yes
+  apt:
+    upgrade: yes
+- name: remove dependencies that are no longer required
+  become: yes
+  apt:
+    autoremove: yes
 
 - name: "install dependencies."
-  become: true
+  become: yes
   apt:
     name: ["nodejs", "npm"]
     state: latest
     update_cache: yes
 
-- name: "install n"
-  become: true
-  npm:
-    name: n
-    global: yes
-    production: yes
-
-- name: "install nodejs 12"
-  become: true
-  shell: n 12
-
 - name: "install pm2"
-  become: true
+  become: yes
   npm:
     name: pm2
     global: yes
     production: yes
     state: present
-
-- name: "Node version"
-  shell: |
-    node --version
-  register: execute_nodev
-
-- name: print message
-  debug:
-    msg: "{{ execute_nodev.stdout_lines }}"
