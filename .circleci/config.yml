@@ -114,7 +114,6 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
 
-
   scan-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -172,6 +171,7 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text) >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
+
       - persist_to_workspace:
           root: ~/
           paths:
@@ -202,16 +202,13 @@ jobs:
 
   run-migrations:
     docker:
-      - image: circleci/node:13.8.0
+      - image: python:3.7-alpine3.16
     steps:
       - checkout
       - run:
           name: Install dependencies
           command: |
-            sudo apt install -y tar gzip curl 
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscli.zip"
-            unzip awscli.zip
-            sudo ./aws/install
+            apk add --update tar gzip ansible aws-cli
       - restore_cache:
          keys: [backend-build]
       - attach_workspace:
@@ -240,15 +237,20 @@ jobs:
       steps:
         - checkout
         - run:
-            name: Install dependencies
+            name: Install ansible , node JS , aws-cli , curl
             command: |
               apk add --update tar gzip nodejs npm aws-cli curl
         - restore_cache:
             keys: [frontend-build]
         - run:
+            name: Install dependencies
+            command: |
+              cd frontend
+              npm install
+        - run:
             name: Get backend url
             command: |
-              export BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
                 --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
                 --output text)
@@ -258,7 +260,6 @@ jobs:
             name: Deploy frontend objects
             command: |
               cd frontend
-              npm install
               npm run build
               aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
 
@@ -276,10 +277,10 @@ jobs:
             apk add --update tar gzip nodejs npm aws-cli curl ansible
       - add_ssh_keys:
           fingerprints: ["21:c1:3f:ef:e0:99:d3:3d:fb:90:ea:13:07:ad:7f:7e"]
-      - restore_cache:
-          keys: [backend-build]
       - attach_workspace:
           at: ~/
+      - restore_cache:
+          keys: [backend-build]
       - run:
           name: Install dependencies
           command: |
@@ -315,25 +316,25 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update tar gzip nodejs npm aws-cli curl ansible
-      # - run:
-      #     name: Backend smoke test.
-      #     command: |
-      #       BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
-      #         --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-      #         --query 'Reservations[*].Instances[*].PublicIpAddress' \
-      #         --output text)
-      #       export API_URL=http://${BACKEND_PUBLIC_IP}:3030
-      #       if curl -s $API_URL/api/status | grep "ok"
-      #       then
-      #         exit 0
-      #       else
-      #         exit 1
-      #       fi
       - run:
           name: Frontend smoke test.
           command: |
             URL=http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com
             if curl -s $URL | grep "Welcome"
+            then
+              exit 0
+            else
+              exit 1
+            fi
+      - run:
+          name: Backend smoke test.
+          command: |
+            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+            export API_URL=http://${BACKEND_PUBLIC_IP}:3030
+            if curl -s $API_URL/api/status | grep "ok"
             then
               exit 0
             else
@@ -398,5 +399,3 @@ workflows:
           requires: [run-migrations]
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
-      - cloudfront-update:
-          requires: [smoke-test]
