@@ -1,20 +1,20 @@
-- name: Copy zipped file
-  shell: |
-    ls /home/ubuntu
-- name: Unpacking zipped files
-  unarchive:
-    src: "artifact.tar.gz"
-    dest: /home/ubuntu
-
-- name: Copy artifact.tar.gz to EC2
+- name: Copy backend files
+  become: true
   copy:
-    src: "artifact.tar.gz"
-    dest: "/home/ubuntu/artifact.tar.gz"
+    src: /root/project/artifact.tar.gz
+    dest: /home/ubuntu/artifact.tar.gz
 
-- name: Executing node
+- name: Prepare job
   shell: |
-    ls /home/ubuntu
-    # tar -xf artifact.tar.gz
+    cd /home/ubuntu/
+    tar xzvf artifact.tar.gz
+    pwd
+    ls -ltr
+
+- name: Start job   
+  shell: |
+    pwd
+    cd /home/ubuntu/backend
     npm install
     pm2 stop default
-    pm2 start npm -- start
+    pm2 start npm -- start  
