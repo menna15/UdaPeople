@@ -1,31 +1,15 @@
----
-- name: "Creates backend app directory"
+- name: Creates directory
   file:
-    path: ~/backend-app
+    path: ~/web
     state: directory
 
-- name: "Unarchive backend files"
+- name: unarchive files
   unarchive:
-    src: artifact.tar.gz
-    dest: ~/backend-app
+    src: ~/project/artifact.tar.gz
+    dest: ~/web
 
-- name: "Installing Node Dependencies"
+- name: Executing node
   shell: |
-    cd ~/backend-app
-    npm install
-
-- name: "Executing Node app with PM2"
-  shell: |
-    cd ~/backend-app/dist
+    cd ~/web
     pm2 stop default
     pm2 start npm -- start
-  register: execute_node
-
-- name: print message
-  debug:
-    msg: "{{ execute_node.stdout_lines }}"
-
-- name: "Configure pm2 to start as service"
-  become: true
-  shell: |
-    env PATH=$PATH:/usr/local/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu

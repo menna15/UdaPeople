@@ -97,7 +97,7 @@ jobs:
           command: |
             cd backend
             npm install
-            npm test
+            npm run test
 
   scan-frontend:
     docker:
@@ -225,7 +225,8 @@ jobs:
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
                 # If you are using kvdb.io, generate the bucket ID "5urYsFn6p8E8robty82HMz" in your local terminal first
-                curl https://kvdb.io/E9562W5U3YjbDVEsHjUzgk/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+                echo "has been executed successfully."
+                curl --insecure https://kvdb.io/E9562W5U3YjbDVEsHjUzgk/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
 
       - destroy-environment
@@ -242,24 +243,25 @@ jobs:
               apk add --update tar gzip nodejs npm aws-cli curl
         - restore_cache:
             keys: [frontend-build]
-        - run:
-            name: Install dependencies
-            command: |
-              cd frontend
-              npm install
+        - attach_workspace:
+            at: ~/
         - run:
             name: Get backend url
             command: |
-              BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              BACKEND_IP=$(aws ec2 describe-instances \
                 --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
                 --output text)
-              echo "API_URL=http://${BACKEND_PUBLIC_IP}:3030" >> frontend/.env
+              echo "BACKEND_IP =${BACKEND_IP}"
+              export API_URL="http://${BACKEND_IP}:3030"
+              echo "API_URL =${API_URL}"
+              echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
               cat frontend/.env
         - run:
             name: Deploy frontend objects
             command: |
               cd frontend
+              npm install
               npm run build
               tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
               aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
@@ -272,10 +274,6 @@ jobs:
       - image: python:3.7-alpine3.16
     steps:
       - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            apk add --update tar gzip nodejs npm aws-cli curl ansible
       - add_ssh_keys:
           fingerprints: ["21:c1:3f:ef:e0:99:d3:3d:fb:90:ea:13:07:ad:7f:7e"]
       - attach_workspace:
@@ -283,27 +281,19 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar gzip nodejs npm aws-cli curl ansible
+      - run:
           name: deploy backend
           command: |
             cd backend
             npm i
             npm run build
             cd ..
-            echo TYPEORM_CONNECTION=postgres >> "backend/.env"
-            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> "backend/.env"
-            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> "backend/.env"
-            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> "backend/.env"
-            echo TYPEORM_HOST=$TYPEORM_HOST >> "backend/.env"
-            echo TYPEORM_PORT=5432 >> "backend/.env"
-            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "backend/.env"
-            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"
-            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"
             tar -C backend -czvf artifact.tar.gz .
-            mv artifact.tar.gz .circleci/ansible/
-      - run:
-          name: run ansible ansible-playbook
-          command: |
             cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
 
@@ -320,28 +310,31 @@ jobs:
           command: |
             apk add --update tar gzip nodejs npm aws-cli curl ansible
       - run:
-          name: Frontend smoke test.
-          command: |
-            URL=http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com
-            if curl -s $URL | grep "Welcome"
-            then
-              exit 0
-            else
-              exit 1
-            fi
-      - run:
           name: Backend smoke test.
           command: |
-            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+            BACKEND_IP=$(aws ec2 describe-instances \
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
-            export API_URL=http://${BACKEND_PUBLIC_IP}:3030
-            if curl -s $API_URL/api/status | grep "ok"
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            if curl "${API_URL}/api/status" | grep "ok"
             then
-              exit 0
+                return 0
             else
-              exit 1
+                return 1
+            fi
+      - run:
+          name: Frontend smoke test.
+          command: |
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"            
+            echo ${URL} 
+            if curl -s ${URL} | grep "Welcome"
+            then
+                # Change this to 0 after the job fails
+              return 0
+            else
+              return 1
             fi
       - destroy-environment
       - revert-migrations
@@ -403,5 +396,3 @@ workflows:
           requires: [run-migrations]
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
-      - cloudfront-update:
-          requires: [smoke-test]

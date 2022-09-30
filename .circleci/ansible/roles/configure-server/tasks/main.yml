@@ -1,19 +1,23 @@
----
-- name: "upgrade packages."
+- name: "update apt packages."
   become: true
   apt:
-    upgrade: "yes"
+    update_cache: yes
 
-- name: "install node js version 13"
+- name: "upgrade packages"
   become: true
-  shell: |
-    sudo apt-get install curl
-    curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -   
+  apt:
+    upgrade: yes
+
+
+- name: remove dependencies that are no longer required
+  become: true
+  apt:
+    autoremove: yes
 
 - name: "install dependencies."
   become: true
   apt:
-    name: ["nodejs"]
+    name: ["nodejs", "npm"]
     state: latest
     update_cache: yes
 
@@ -22,3 +26,5 @@
   npm:
     name: pm2
     global: yes
+    production: yes
+    state: present
