@@ -28,7 +28,7 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
+            SUCCESS=$(curl --insecure  https://kvdb.io/E9562W5U3YjbDVEsHjUzgk/migration_<< parameters.Workflow_ID >>)
             if (( $SUCCESS == 1 ));
             then
               cd ~/project/backend
@@ -225,7 +225,7 @@ jobs:
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
                 # If you are using kvdb.io, generate the bucket ID "5urYsFn6p8E8robty82HMz" in your local terminal first
-                curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+                curl https://kvdb.io/E9562W5U3YjbDVEsHjUzgk/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
 
       - destroy-environment
@@ -360,14 +360,12 @@ jobs:
               --no-paginate --output text)
             echo $OLD_WORKFLOW_ID >> ~/OLD_WORKFLOW_ID.txt
             cat ~/OLD_WORKFLOW_ID.txt
-
             aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
               --stack-name InitialStack
-
-            echo "OldWorkflowID: ${OldWorkflowID}"
-            echo "Current Workflow Id : ${CIRCLE_WORKFLOW_ID:0:7}"
+            echo OldWorkflowID: "${OldWorkflowID}"
+            echo Current Workflow Id : "${CIRCLE_WORKFLOW_ID:0:7}"
 
       - destroy-environment
       - revert-migrations
