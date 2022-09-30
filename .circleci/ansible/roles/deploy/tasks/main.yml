@@ -13,11 +13,12 @@
   shell: |
     cd ~/backend-app
     npm i
+    
 - name: "Executing Node app with PM2"
   shell: |
-    cd ~/backend-app/dist
+    cd ~/backend-app
     pm2 stop default
-    pm2 start main.js
+    pm2 start npm -- start
   register: execute_node
 
 - name: print message
