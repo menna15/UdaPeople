@@ -204,6 +204,17 @@ jobs:
       - run:
           name: Run Playbook and Configure server
           command: |
+            echo NODE_ENV=production > ~/project/backend/.env
+            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> ~/project/backend/.env
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ~/project/backend/.env
+            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> ~/project/backend/.env
+            echo TYPEORM_HOST=$TYPEORM_HOST >> ~/project/backend/.env
+            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> ~/project/backend/.env
+            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> ~/project/backend/.env
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ~/project/backend/.env
+            echo TYPEORM_PORT=5432 >> ~/project/backend/.env
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ~/project/backend/.env
+            cat ~/project/backend/.env
             cat ~/workspace/inventory.txt
             echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
             ansible-playbook -i ~/workspace/inventory.txt .circleci/ansible/configure-server.yml
@@ -229,10 +240,7 @@ jobs:
           name: Show ~/project/backend/migrations_dump.txt file
           command: |
             cat ~/project/backend/migrations_dump.txt
-      # - run:
-      #     name: Show migrations_dump.txt file
-      #     command: |
-      #       cat migrations_dump.txt
+
       - run:
           name: Send migration results to memstash 
           command: |
