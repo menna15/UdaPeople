@@ -249,7 +249,7 @@ jobs:
         - run:
             name: Get backend url
             command: |
-              export BACKEND_IP=$(aws ec2 describe-instances \
+              export BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
                 --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
                 --output text)
@@ -261,7 +261,6 @@ jobs:
               cd frontend
               npm install
               npm run build
-              tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
               aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
 
         - destroy-environment
@@ -298,6 +297,9 @@ jobs:
       - run:
           name: deploy backend
           command: |
+            export TYPEORM_MIGRATIONS_DIR=./migrations
+            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
+            export TYPEORM_MIGRATIONS=./migrations/*.ts
             cd .circleci/ansible
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
