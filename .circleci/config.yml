@@ -342,17 +342,14 @@ jobs:
           command: |
             cat ~/inventory.txt
       - run:
-          name: Get backend url
-          command: |
-              export BACKEND_IP=$(cat ~/inventory.txt)
-      - run:
           name: Backend smoke test.
           command: |
-            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+            BACKEND_IP=$(aws ec2 describe-instances \
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
-            export API_URL=http://${BACKEND_PUBLIC_IP}:3030
+            export API_URL=http://${BACKEND_IP}:3030
+            echo Backend URL: ${API_URL}/api/status
             if curl -s $API_URL/api/status | grep "ok"
             then
               exit 0
