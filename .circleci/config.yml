@@ -261,6 +261,7 @@ jobs:
             command: |
               cd frontend
               npm run build
+              tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
               aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
 
         - destroy-environment
@@ -282,24 +283,23 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - run:
-          name: Install dependencies
-          command: |
-            cd backend
-            npm install
-      - run:
-          name: build backend
-          command: |
-            cd backend
-            npm run build
-            tar -czf artifact.tar.gz dist/* package*
-            cd ..
-            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
-      - run:
           name: deploy backend
           command: |
-            export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
-            export TYPEORM_MIGRATIONS=./migrations/*.ts
+            cd backend
+            npm i
+            npm run build
+            cd ..
+            echo TYPEORM_CONNECTION=postgres >> "backend/.env"
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> "backend/.env"
+            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> "backend/.env"
+            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> "backend/.env"
+            echo TYPEORM_HOST=$TYPEORM_HOST >> "backend/.env"
+            echo TYPEORM_PORT=5432 >> "backend/.env"
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "backend/.env"
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"
+            tar -C backend -czvf artifact.tar.gz .
+            mv artifact.tar.gz .circleci/ansible/
             cd .circleci/ansible
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
@@ -358,13 +358,16 @@ jobs:
             export OLD_WORKFLOW_ID=$(aws cloudformation \
               list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
               --no-paginate --output text)
+
             echo $OLD_WORKFLOW_ID >> ~/OLD_WORKFLOW_ID.txt
             cat ~/OLD_WORKFLOW_ID.txt
+
             aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
               --stack-name InitialStack
-            echo OldWorkflowID: "${OldWorkflowID}"
+
+            echo OLD_WORKFLOW_ID: "${OLD_WORKFLOW_ID}"
             echo Current Workflow Id : "${CIRCLE_WORKFLOW_ID:0:7}"
 
       - destroy-environment
