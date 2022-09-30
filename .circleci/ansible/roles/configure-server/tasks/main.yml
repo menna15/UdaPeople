@@ -14,10 +14,15 @@
   apt:
     autoremove: yes
 
+- name: "add nodejs latest version 13 that support npm"
+  become: true
+  shell: |
+    curl -sL https://deb.nodesource.com/setup_$13.x | sudo -E bash -
+
 - name: "install dependencies."
   become: true
   apt:
-    name: ["nodejs", "npm","python3"]
+    name: ["nodejs", "npm"]
     state: latest
     update_cache: yes
 
