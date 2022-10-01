@@ -166,7 +166,7 @@ jobs:
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-              # echo [web] > ~/inventory.txt
+              echo [web] > ~/inventory.txt
               aws ec2 describe-instances \
                   --query 'Reservations[*].Instances[*].PublicIpAddress' \
                   --output text >> ~/inventory.txt
@@ -311,7 +311,7 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - run: yum install -y tar gzip
+      - run: yum install -y tar gzip ansible
       - attach_workspace:
             at: ~/      
       - run:
