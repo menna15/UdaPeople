@@ -159,6 +159,7 @@ jobs:
           command: |
               echo [web] > ~/inventory.txt
               aws ec2 describe-instances \
+                  --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
                   --query 'Reservations[*].Instances[*].PublicIpAddress' \
                   --output text >> ~/inventory.txt
       - persist_to_workspace:
