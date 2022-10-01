@@ -311,7 +311,7 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - run: yum install -y tar gzip ansible
+      - run: yum install -y tar gzip 
       - attach_workspace:
             at: ~/      
       - run:
@@ -322,13 +322,13 @@ jobs:
               # npm install -g npm
               # npm install oauth2
               # npm install webpack
-      # - run:
-      #     name: Install awscli
-      #     command: |
-      #         yum install -y awscli
-      #         amazon-linux-extras install epel -y
-      #         yum update -y
-      #         yum install -y ansible
+      - run:
+          name: Install awscli
+          command: |
+              yum install -y awscli
+              amazon-linux-extras install epel -y
+              yum update -y
+              yum install -y ansible
       - run:
           name: Deploy backend
           command: |
@@ -498,8 +498,7 @@ workflows:
           requires: [run-migrations]    
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
-
-      # - cloudfront-update:
-      #     requires: [smoke-test]
+      - cloudfront-update:
+          requires: [smoke-test]
       # - cleanup:
       #     requires: [cloudfront-update]
