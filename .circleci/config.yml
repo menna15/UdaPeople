@@ -22,7 +22,7 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            SUCCESS=$(curl --insecure  https://kvdb.io/E9562W5U3YjbDVEsHjUzgk/migration_${CIRCLE_WORKFLOW_ID:0:7})
+            SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7})
             if(( $SUCCESS==1 )); 
             then
               cd ~/project/backend
@@ -171,6 +171,7 @@ jobs:
           root: ~/
           paths:
             - inventory.txt
+
       - destroy-environment
 
   configure-infrastructure:
@@ -190,7 +191,7 @@ jobs:
       - run:
           name: Run Playbook and Configure server
           command: |
-            # set environment variables:
+            # set environment variables(optional):
             echo NODE_ENV=production > ~/project/backend/.env
             echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> ~/project/backend/.env
             echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ~/project/backend/.env
@@ -219,19 +220,14 @@ jobs:
             cd backend
             npm install
             npm run migrations:revert
-            # Run and save the migration output
             npm run migrations > migrations_dump.txt
-      - run:
-          name: print ~/project/backend/migrations_dump.txt file
-          command: |
-            cat ~/project/backend/migrations_dump.txt
-
+            cat migrations_dump.txt
       - run:
           name: Send migration results to kvdb.io 
           command: |
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
-                curl -k https://kvdb.io/E9562W5U3YjbDVEsHjUzgk/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+                curl -k https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
       - destroy-environment  
       - revert-migrations
@@ -245,14 +241,11 @@ jobs:
       - attach_workspace:
             at: ~/      
       - run:
-          name: Install dependencies 1
+          name: Install dependencies
           command: |
               cat /etc/*release
               curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
               yum -y install nodejs
-              # npm install -g npm
-              # npm install oauth2
-              # npm install webpack
       - run:
           name: Get backend url
           command: |
@@ -262,6 +255,7 @@ jobs:
               export API_URL="http://${BACKEND_IP}:3030"
               echo "API_URL=${API_URL}"
               echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+              # these env vars are for solving react hot issue appears when adding new employees
               echo ENVIRONMENT=production >> "frontend/.env"
               echo NODE_ENV=production >> "frontend/.env"
               cat frontend/.env
@@ -269,9 +263,6 @@ jobs:
           name: Deploy frontend objects
           command: |
               cd frontend
-              npm install
-              npm install webpack -g
-              npm install -D webpack-cli
               npm run build
               tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
               aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive        
