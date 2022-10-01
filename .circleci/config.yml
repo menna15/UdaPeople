@@ -1,6 +1,7 @@
 version: 2.1
 orbs: 
   slack: circleci/slack@4.8.2
+
 commands:
   destroy-environment:
     description: Destroy backend and frontend cloudformation stacks.
@@ -157,12 +158,7 @@ jobs:
                 --tags project=udapeople \
                 --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
                 --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  
-      - run:
-          name: Show back-end ip
-          command: |
-              echo aws ec2 describe-instances \
-                  --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                  --output text
+ 
       - run:
           name: Add back-end ip to ansible inventory
           command: |
@@ -176,19 +172,6 @@ jobs:
             - inventory.txt
       - destroy-environment
 
-  # show-workspace-data:
-  #   docker:
-  #     - image: amazon/aws-cli
-  #   steps:
-  #     - checkout 
-  #     - run: yum install -y tar gzip
-  #     - attach_workspace:
-  #           at: ~/data      
-  #     - run:
-  #         name: Show inventory.txt from workspace
-  #         command: |
-  #           cat ~/data/inventory.txt
-
   configure-infrastructure:
     docker:
         - image: python:3.7-alpine3.11
@@ -197,20 +180,16 @@ jobs:
       - add_ssh_keys:
                 fingerprints: ["21:c1:3f:ef:e0:99:d3:3d:fb:90:ea:13:07:ad:7f:7e"]
       - attach_workspace:
-            at: ~/workspace      
+            at: ~/      
       - run:
           name: Install dependencies
           command: |
             apk add --update ansible tar gzip
             pip install awscli
-      # - run:
-      #     name: Install dependencies
-      #     command: |
-      #       apk add --update tar gzip
-      #       pip install awscli
       - run:
           name: Run Playbook and Configure server
           command: |
+            # set environment variables:
             echo NODE_ENV=production > ~/project/backend/.env
             echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> ~/project/backend/.env
             echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ~/project/backend/.env
@@ -221,14 +200,15 @@ jobs:
             echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ~/project/backend/.env
             echo TYPEORM_PORT=5432 >> ~/project/backend/.env
             echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ~/project/backend/.env
+
             cat ~/project/backend/.env
             cat ~/workspace/inventory.txt
            
-            ansible-playbook -i ~/workspace/inventory.txt .circleci/ansible/configure-server.yml
+            ansible-playbook -i ~/inventory.txt .circleci/ansible/configure-server.yml
       - run:
           name: Install node-explorer
           command: |
-            ansible-playbook -i ~/workspace/inventory.txt .circleci/ansible/configure-prometheus-node-exporter.yml
+            ansible-playbook -i ~/inventory.txt .circleci/ansible/configure-prometheus-node-exporter.yml
 
       - destroy-environment     
 
@@ -319,11 +299,8 @@ jobs:
           command: |
               curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
               yum -y install nodejs
-              # npm install -g npm
-              # npm install oauth2
-              # npm install webpack
       - run:
-          name: Install awscli
+          name: Install awscli and ansible
           command: |
               yum install -y awscli
               amazon-linux-extras install epel -y
@@ -336,30 +313,25 @@ jobs:
               npm i
               npm run build
               cd ..
-              # Zip the directory
+              # zip backend
               tar -C backend -czvf artifact.tar.gz .
               ls -l artifact.tar.gz
               pwd
-              # find / -name artifact.tar.gz
-              # cd .circleci/ansible
-              # echo "Contents  of the inventory.txt file is -------"
-              # cat ~/inventory.txt
-              ansible-playbook -i ~/inventory.txt /root/project/.circleci/ansible/deploy-backend.yml
+              ansible-playbook -i ~/inventory.txt ~/project/.circleci/ansible/deploy-backend.yml
       - destroy-environment  
       - revert-migrations
 
   smoke-test:
     docker:
-        - image: python:3.7-alpine3.11
+      - image: python:3.10-alpine3.16
     steps:
-      - checkout  
-      - run: apk add --update tar gzip curl aws-cli
+      - checkout
+      - run: 
+          name: Install dependencies
+          command: |
+            apk add --update --no-cache aws-cli curl tar gzip nodejs npm
       - attach_workspace:
             at: ~/ 
-      # - run:
-      #     name: Install dependencies
-      #     command: |
-      #         apk add --update curl aws-cli
       - run:
           name: print inventory.txt from workspace
           command: |
@@ -406,10 +378,6 @@ jobs:
       - attach_workspace:
             at: ~/     
       - run:
-          name: Install dependencies
-          command: |
-            # your code here
-      - run:
           name: Update cloudfront distribution
           command: |
               export OldWorkflowID=$(aws cloudformation \
@@ -426,6 +394,7 @@ jobs:
           root: ~/
           paths:
             - OldWorkflowID.txt
+            
       - destroy-environment
       - revert-migrations
 
