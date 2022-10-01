@@ -205,10 +205,10 @@ jobs:
             cat ~/inventory.txt
            
             ansible-playbook -i ~/inventory.txt .circleci/ansible/configure-server.yml
-      - run:
-          name: Install node-explorer
-          command: |
-            ansible-playbook -i ~/inventory.txt .circleci/ansible/configure-prometheus-node-exporter.yml
+      # - run:
+      #     name: Install node-explorer
+      #     command: |
+      #       ansible-playbook -i ~/inventory.txt .circleci/ansible/configure-prometheus-node-exporter.yml
 
       - destroy-environment     
 
@@ -405,11 +405,11 @@ jobs:
       - run:
           name: Get old stack workflow id
           command: |
-              # export OldWorkflowID=$(aws cloudformation \
-              # list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-              # --no-paginate --output text)
+              export OldWorkflowID=$(aws cloudformation \
+              list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+              --no-paginate --output text)
 
-              export OldWorkflowID=$(cat ~/OldWorkflowID.txt)
+              # export OldWorkflowID=$(cat ~/OldWorkflowID.txt)
               echo OldWorkflowID "${OldWorkflowID}"
               echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
               
@@ -453,7 +453,10 @@ workflows:
       - scan-frontend:
           requires: [build-frontend]
       - deploy-infrastructure:
-          requires: [test-frontend, test-backend, scan-frontend, scan-backend]       
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]    
+          filters:
+            branches:
+              only: [master]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
       - run-migrations:
