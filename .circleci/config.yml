@@ -257,10 +257,6 @@ jobs:
               # npm install -g npm
               # npm install oauth2
               # npm install webpack
-      # - run:
-      #     name: Install awscli
-      #     command: |
-      #         yum install -y awscli
       - run:
           name: Get backend url
           command: |
@@ -370,10 +366,13 @@ jobs:
 
   cloudfront-update:
     docker:
-      - image: amazon/aws-cli
+      - image: python:3.10-alpine3.16
     steps:
       - checkout
-      - run: yum install -y tar gzip
+      - run: 
+          name: Install dependencies
+          command: |
+            apk add --update --no-cache aws-cli curl tar gzip nodejs npm
       - attach_workspace:
             at: ~/     
       - run:
@@ -383,12 +382,16 @@ jobs:
                 list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
                 --no-paginate --output text)
               echo ${OldWorkflowID} >> ~/OldWorkflowID.txt
-              echo Old workflow ID: ${OldWorkflowID}
+              cat ~/OldWorkflowID.txt
+
               aws cloudformation deploy \
                 --template-file .circleci/files/cloudfront.yml \
-                --stack-name InitialStack-2 \
-                --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
+                --stack-name InitialStack-${OldWorkflowID} \
+                --parameter-overrides WorkflowID=udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" \
                 --tags project=udapeople
+
+              echo OldWorkflowID: "${OldWorkflowID}"
+              echo CurrentWorkflowID: "${CIRCLE_WORKFLOW_ID:0:7}"
       - persist_to_workspace:
           root: ~/
           paths:
