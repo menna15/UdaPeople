@@ -202,7 +202,7 @@ jobs:
             echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ~/project/backend/.env
 
             cat ~/project/backend/.env
-            cat ~/workspace/inventory.txt
+            cat ~/inventory.txt
            
             ansible-playbook -i ~/inventory.txt .circleci/ansible/configure-server.yml
       - run:
@@ -394,7 +394,7 @@ jobs:
           root: ~/
           paths:
             - OldWorkflowID.txt
-            
+
       - destroy-environment
       - revert-migrations
 
