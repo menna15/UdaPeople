@@ -164,14 +164,12 @@ jobs:
           command: |
               echo [web] > ~/inventory.txt
               aws ec2 describe-instances \
-                  --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
                   --query 'Reservations[*].Instances[*].PublicIpAddress' \
                   --output text >> ~/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
             - inventory.txt
-
       - destroy-environment
 
   configure-infrastructure:
@@ -191,7 +189,7 @@ jobs:
       - run:
           name: Run Playbook and Configure server
           command: |
-            # set environment variables(optional):
+            # set environment variables:
             echo NODE_ENV=production > ~/project/backend/.env
             echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> ~/project/backend/.env
             echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ~/project/backend/.env
@@ -212,7 +210,7 @@ jobs:
           command: |
             ansible-playbook -i ~/inventory.txt .circleci/ansible/configure-prometheus-node-exporter.yml
 
-      - destroy-environment        
+      - destroy-environment     
 
   run-migrations:
     docker:
@@ -225,14 +223,19 @@ jobs:
             cd backend
             npm install
             npm run migrations:revert
+            # Run and save the migration output
             npm run migrations > migrations_dump.txt
-            cat migrations_dump.txt
+      - run:
+          name: print ~/project/backend/migrations_dump.txt file
+          command: |
+            cat ~/project/backend/migrations_dump.txt
+
       - run:
           name: Send migration results to kvdb.io 
           command: |
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
-                curl -k https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+                curl -k https://kvdb.io/E9562W5U3YjbDVEsHjUzgk/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
       - destroy-environment  
       - revert-migrations
@@ -246,11 +249,14 @@ jobs:
       - attach_workspace:
             at: ~/      
       - run:
-          name: Install dependencies
+          name: Install dependencies 1
           command: |
               cat /etc/*release
               curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
               yum -y install nodejs
+              # npm install -g npm
+              # npm install oauth2
+              # npm install webpack
       - run:
           name: Get backend url
           command: |
@@ -260,7 +266,6 @@ jobs:
               export API_URL="http://${BACKEND_IP}:3030"
               echo "API_URL=${API_URL}"
               echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
-              # these env vars are for solving react hot issue appears when adding new employees
               echo ENVIRONMENT=production >> "frontend/.env"
               echo NODE_ENV=production >> "frontend/.env"
               cat frontend/.env
@@ -371,23 +376,27 @@ jobs:
       - attach_workspace:
             at: ~/     
       - run:
-          name: Save Old Workflow ID to kvdb.io
-          command: |
-            export OLD_WORKFLOW_ID=$(aws cloudformation \
-                      list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-                      --no-paginate --output text)
-            echo "Old Wokflow ID: $OLD_WORKFLOW_ID"
-            curl https://kvdb.io/${KVDB_BUCKET}/old_workflow_id -d "${OLD_WORKFLOW_ID}"
-      - run:
           name: Update cloudfront distribution
           command: |
-            aws cloudformation deploy \
-              --template-file .circleci/files/cloudfront.yml \
-              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
-              --stack-name InitialStack
-      - destroy-environment
-      - revert-migrations
-              
+              export OldWorkflowID=$(aws cloudformation \
+                list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+                --no-paginate --output text)
+              echo ${OldWorkflowID} >> ~/OldWorkflowID.txt
+              cat ~/OldWorkflowID.txt
+
+              aws cloudformation deploy \
+                --template-file .circleci/files/cloudfront.yml \
+                --stack-name InitialStack \
+                --parameter-overrides WorkflowID=udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" \
+                --tags project=udapeople
+
+              echo OldWorkflowID: "${OldWorkflowID}"
+              echo CurrentWorkflowID: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - OldWorkflowID.txt
+
       - destroy-environment
       - revert-migrations
 
@@ -402,21 +411,34 @@ jobs:
       - run:
           name: Get old stack workflow id
           command: |
-            export STACKS=($(aws cloudformation list-stacks \
-                --query "StackSummaries[*].StackName" \
-                --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
-            echo Stack names: "${STACKS[@]}"
-            export OldWorkflowID=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/old_workflow_id)
-            echo Old Workflow ID: $OldWorkflowID 
-            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
-            then
-              echo "-------------------DELETE---------------------------"
+              # export OldWorkflowID=$(aws cloudformation \
+              # list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+              # --no-paginate --output text)
+
+              export OldWorkflowID=$(cat ~/OldWorkflowID.txt)
+              echo OldWorkflowID "${OldWorkflowID}"
+              echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+
+              # Fetch the stack names          
+              # export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+              # --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
+              # echo Stack names: "${STACKS[@]}" 
+      - run:
+          name: Remove old stacks and files
+          command: |
+              export OldWorkflowID=$(cat ~/OldWorkflowID.txt)
+              echo OldWorkflowID "${OldWorkflowID}"
+              echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+              echo "Deleted old frontend s3 files: s3://udapeople-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+              echo "Deleted old backend stack: udapeople-backend-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
-            else
-              echo "-------------------Can't DELETE---------------------------"
-            fi
+              echo "Deleted old frontend stack: udapeople-frontend-${OldWorkflowID}"
+
+        
+
 
 workflows:
   default:
@@ -436,10 +458,7 @@ workflows:
       - scan-frontend:
           requires: [build-frontend]
       - deploy-infrastructure:
-          requires: [test-frontend, test-backend, scan-frontend, scan-backend]    
-          filters:
-            branches:
-              only: [main]
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]       
       - configure-infrastructure:
           requires: [deploy-infrastructure]
       - run-migrations:
