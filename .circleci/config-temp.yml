@@ -1,4 +1,3 @@
-
 version: 2.1
 orbs: 
   slack: circleci/slack@4.8.2
@@ -15,6 +14,7 @@ commands:
               aws cloudformation delete-stack --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
             
+
   revert-migrations:
     description: Revert the last migration .
     steps:
@@ -90,6 +90,7 @@ jobs:
             cd frontend
             npm install
             npm run test
+
   test-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -103,6 +104,7 @@ jobs:
             cd backend
             npm install
             npm run test
+
   scan-frontend:
     docker:
       - image: circleci/node:13.8.0
@@ -117,6 +119,7 @@ jobs:
             # npm install oauth-sign@^0.9.0
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
+
   scan-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -132,6 +135,7 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical 
+
   deploy-infrastructure:
     docker:
       - image: amazon/aws-cli
@@ -196,6 +200,7 @@ jobs:
             echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ~/project/backend/.env
             echo TYPEORM_PORT=5432 >> ~/project/backend/.env
             echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ~/project/backend/.env
+
             cat ~/project/backend/.env
             cat ~/inventory.txt
            
@@ -204,6 +209,7 @@ jobs:
           name: Install node-explorer
           command: |
             ansible-playbook -i ~/inventory.txt .circleci/ansible/configure-prometheus-node-exporter.yml
+
       - destroy-environment     
 
   run-migrations:
@@ -223,6 +229,7 @@ jobs:
           name: print ~/project/backend/migrations_dump.txt file
           command: |
             cat ~/project/backend/migrations_dump.txt
+
       - run:
           name: Send migration results to kvdb.io 
           command: |
@@ -376,11 +383,13 @@ jobs:
                 --no-paginate --output text)
               echo ${OldWorkflowID} >> ~/OldWorkflowID.txt
               cat ~/OldWorkflowID.txt
+
               aws cloudformation deploy \
                 --template-file .circleci/files/cloudfront.yml \
                 --stack-name InitialStack \
                 --parameter-overrides WorkflowID=udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" \
                 --tags project=udapeople
+
               echo OldWorkflowID: "${OldWorkflowID}"
               echo CurrentWorkflowID: "${CIRCLE_WORKFLOW_ID:0:7}"
       - persist_to_workspace:
@@ -405,9 +414,11 @@ jobs:
               # export OldWorkflowID=$(aws cloudformation \
               # list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
               # --no-paginate --output text)
+
               export OldWorkflowID=$(cat ~/OldWorkflowID.txt)
               echo OldWorkflowID "${OldWorkflowID}"
               echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+
               # Fetch the stack names          
               # export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
               # --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
@@ -418,12 +429,14 @@ jobs:
               export OldWorkflowID=$(cat ~/OldWorkflowID.txt)
               echo OldWorkflowID "${OldWorkflowID}"
               echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               echo "Deleted old frontend s3 files: s3://udapeople-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
               echo "Deleted old backend stack: udapeople-backend-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
               echo "Deleted old frontend stack: udapeople-frontend-${OldWorkflowID}"
+
         
 
 
