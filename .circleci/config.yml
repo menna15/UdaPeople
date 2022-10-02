@@ -153,9 +153,9 @@ jobs:
           command: |
             aws cloudformation deploy \
                 --template-file .circleci/files/frontend.yml \
-                --tags project=udapeople \
                 --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
-                --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  
+                --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
+                --tags project=udapeople 
  
       - run:
           name: Add back-end ip to ansible inventory
@@ -224,11 +224,6 @@ jobs:
             npm install
             npm run migrations:revert
             npm run migrations > migrations_dump.txt
-      - run:
-          name: print ~/project/backend/migrations_dump.txt file
-          command: |
-            cat ~/project/backend/migrations_dump.txt
-
       - run:
           name: Send migration results to kvdb.io 
           command: |
@@ -413,10 +408,15 @@ jobs:
               echo OldWorkflowID "${OldWorkflowID}"
               echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
               echo "${CIRCLE_WORKFLOW_ID:0:7}" =~ "${OldWorkflowID}"
+              if [[ "${CIRCLE_WORKFLOW_ID:0:7}" != "${OldWorkflowID}" ]]
+              then
               echo "-------------------DELETE---------------------------"
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+              else
+              echo "-------------------CAN'T DELETE---------------------------"
+              fi
 
 workflows:
   default:
@@ -436,7 +436,10 @@ workflows:
       - scan-frontend:
           requires: [build-frontend]
       - deploy-infrastructure:
-          requires: [test-frontend, test-backend, scan-frontend, scan-backend]       
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]    
+          filters:
+            branches:
+              only: [main]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
       - run-migrations:
