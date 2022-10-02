@@ -1,5 +1,14 @@
-URL01
+URL01 GitHub repository
 https://github.com/menna15/UdaPeople
 
-URL02
-http://udapeople-fc6ab0c.s3-website-us-east-1.amazonaws.com/#/employees
+URL02 S3 Bucket
+http://udapeople-da2e0a1.s3-website-us-east-1.amazonaws.com/#/employees
+
+URL03 CloudFront
+http://d35ctfn73ssedw.cloudfront.net/
+
+URL04 deployed application back-end in EC2
+http://3.87.4.153:3030/api/status
+
+URLO5 Prometheus Server
+http://ec2-52-91-248-49.compute-1.amazonaws.com:9090/targets
