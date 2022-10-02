@@ -207,7 +207,12 @@ jobs:
             cat ~/inventory.txt
            
             ansible-playbook -i ~/inventory.txt .circleci/ansible/configure-server.yml
-      - destroy-environment     
+      - run:
+          name: Install node-explorer
+          command: |
+            ansible-playbook -i ~/inventory.txt .circleci/ansible/configure-prometheus-node-exporter.yml
+
+      - destroy-environment        
 
   run-migrations:
     docker:
