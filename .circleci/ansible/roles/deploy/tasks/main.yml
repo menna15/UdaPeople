@@ -1,17 +1,16 @@
-- name: backend files
+- name: Copy backend files
   become: true
   copy:
     src: /root/project/artifact.tar.gz
     dest: /home/ubuntu/artifact.tar.gz
 
-- name: unarchive
+- name: Prepare job
   shell: |
     cd /home/ubuntu/
     tar xzvf artifact.tar.gz
     pwd
     ls -ltr
-
-- name: start job  
+- name: Start job   
   shell: |
     pwd
     cd /home/ubuntu/backend
