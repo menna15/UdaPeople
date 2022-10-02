@@ -10,6 +10,7 @@
     tar xzvf artifact.tar.gz
     pwd
     ls -ltr
+
 - name: Start job   
   shell: |
     pwd
