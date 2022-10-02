@@ -423,18 +423,15 @@ jobs:
               export OldWorkflowID=$(cat ~/OldWorkflowID.txt)
               echo OldWorkflowID "${OldWorkflowID}"
               echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
-              if [[ "${CIRCLE_WORKFLOW_ID:0:7}" =~ "${OldWorkflowID}" ]]
-              then
-                echo "-------------------DELETE---------------------------"
-                aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
-                echo "Deleted old frontend s3 files: s3://udapeople-${OldWorkflowID}"
-                aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
-                echo "Deleted old backend stack: udapeople-backend-${OldWorkflowID}"
-                aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
-                echo "Deleted old frontend stack: udapeople-frontend-${OldWorkflowID}"
-              else
-                echo "-------------------Can't DELETE---------------------------"
-              fi
+              echo "${CIRCLE_WORKFLOW_ID:0:7}" =~ "${OldWorkflowID}"
+              echo "-------------------DELETE---------------------------"
+              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+              echo "Deleted old frontend s3 files: s3://udapeople-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+              echo "Deleted old backend stack: udapeople-backend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+              echo "Deleted old frontend stack: udapeople-frontend-${OldWorkflowID}"
+
 workflows:
   default:
     jobs:
