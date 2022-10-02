@@ -8,7 +8,7 @@ In this project, you will prove your mastery of the following learning objective
 - Surface critical server errors for diagnosis using centralized structured logging.
 
 ![Diagram of CI/CD Pipeline we will be building.](udapeople.png)
-![App](https://github.com/menna15/UdaPeople/blob/main/screenshots/Screenshot%20from%202022-10-02%2023-22-24.png)
+![App](https://github.com/menna15/UdaPeople/blob/main/screenshots/Screenshot%20from%202022-10-02%2023-30-41.png)
 ![prometheus](https://github.com/menna15/UdaPeople/blob/main/screenshots/%5BSCREENSHOT11%5D-cpu.png)
 ![alertmanager](https://github.com/menna15/UdaPeople/blob/main/screenshots/%5BSCREENSHOT12%5D.png)
 ### UdaPeople Application 
